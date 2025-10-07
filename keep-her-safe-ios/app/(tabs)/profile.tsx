@@ -1,32 +1,31 @@
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import { Picker } from "@react-native-picker/picker";
+import * as Location from "expo-location";
 import {
-  View,
+  EmailAuthProvider,
+  getAuth,
+  reauthenticateWithCredential,
+  updateEmail,
+} from "firebase/auth";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Button,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
-  Dimensions,
-  Button,
-  StyleSheet,
   TouchableOpacity,
-  Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Modal,
-  ActivityIndicator,
+  View
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../../firebase/config";
-import {
-  getAuth,
-  updateEmail,
-  EmailAuthProvider,
-  reauthenticateWithCredential,
-} from "firebase/auth";
-import * as Location from "expo-location";
 import MapView, { Marker } from "react-native-maps";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { db } from "../../firebase/config";
 
 export default function ProfileScreen() {
   //  Firebase Authentication & Current User Info

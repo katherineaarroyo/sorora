@@ -1,132 +1,120 @@
-// Import tab navigator and router from Expo Router
-import { Tabs, useRouter } from "expo-router";
+// _layout.tsx
+import * as Location from "expo-location";
+import { Stack } from "expo-router";
+import MapView, { Marker } from "react-native-maps";
 
-// Import Ionicons for tab icons
-import { Ionicons } from "@expo/vector-icons";
-import HomeBanner from "../../assets/images/home-banner.svg";
+import React, {
+  useEffect,
+  useState
+} from "react";
 
-// React and necessary providers
-import React from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import BottomBar from "@/components/BottomBar";
+import ContactsButton from "../../assets/images/contactsTopNavButton.svg";
+import SettingsButton from "../../assets/images/settingsTopNavButton.svg";
 
-import { Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Dimensions,
+  StyleSheet,
+  View
+} from "react-native";
 
-// Map each tab route name to a corresponding Ionicon
-const ICONS_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
-  index: "home",
-  customization: "color-palette",
-  settings: "settings",
-  profile: "person-circle-outline",
-};
 
-// Header title component that redirects to home when clicked
-function HeaderTitleClickable({ title }: { title: string }) {
-  const router = useRouter();
+export default function HomeLayout() {
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const { width, height } = Dimensions.get("window");
+  const userName = "You";
 
-  // Show back arrow if we're not on Home
-  const showBackArrow = title !== "Home";
+  // Request location on mount
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      
+      const currentLocation = await Location.getCurrentPositionAsync({});
+    })();
+  }, []);
 
-  // If on Home, show the clickable logo banner
-  if (title === "Home") {
-    return (
-      <TouchableOpacity
-        onPress={() => router.push("/")} // Clicking logo takes user to Home
-        style={{ flexDirection: "row", alignItems: "center" }} // Layout for logo
-      >
-        {/* Home banner logo */}
-        <HomeBanner width={200} height={100} />
-      </TouchableOpacity>
-    );
-  }
-
-  // If not Home, show back arrow + page title
   return (
-    <TouchableOpacity
-      onPress={() => {
-        if (showBackArrow) {
-          router.push("/"); // Clicking back arrow navigates home
-        }
-      }}
-      style={{ flexDirection: "row", alignItems: "center" }}
-      disabled={!showBackArrow} // Disable press if no back arrow
-    >
-      {/* Conditionally render back arrow */}
-      {showBackArrow ? (
-        <Ionicons
-          name="arrow-back"
-          size={26}
-          color="#E37B80"
-          style={{ marginRight: 6 }}
-        />
-      ) : null}
-
-      {/* Title text beside arrow or centered if no arrow */}
-      <Text
-        style={{
-          color: "#E37B80",
-          fontWeight: "bold",
-          fontSize: 24,
-          paddingLeft: showBackArrow ? 0 : 26, // Push text if no arrow
-        }}
-      >
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
-// Main layout for the tab navigator
-export default function TabLayout() {
-  return (
-    // Enables gesture support for bottom sheets and swipes
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* Provider for bottom sheet components */}
-      <BottomSheetModalProvider>
-        <Tabs
-          screenOptions={({ route }) => {
-            // Get correct icon name for tab
-            const iconName = ICONS_MAP[route.name] ?? "ellipse";
-
-            // Define header titles for each route
-            const title =
-              {
-                index: "Home",
-                customization: "Customization",
-                settings: "Settings",
-                profile: "Profile",
-              }[route.name] ?? "App";
-
-            return {
-              // Tab bar icon for each screen
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name={iconName} size={size} color={color} />
-              ),
-              headerShown: true, // Always show header
-              headerTitle: () => <HeaderTitleClickable title={title} />, // Custom header with back/logo
-              tabBarStyle: {
-                // Styles for bottom tab bar
-                backgroundColor: "#F8EDED",
-                borderColor: "#E37B80",
-                borderTopWidth: 2,
-                borderBottomWidth: 0,
-                elevation: 0,
-              },
-              tabBarActiveTintColor: "#E37B80", // Active tab color
-              tabBarInactiveTintColor: "gray", // Inactive tab color
-            };
+    <View style={{ flex: 1}}>
+      {/* Full-screen map */}
+      {location ? (
+        <MapView style={{ width, height, position: "relative", top: 0, left: 0 }}
+          initialRegion={{
+            latitude: location!.coords.latitude,
+            longitude: location!.coords.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
           }}
+          showsUserLocation
         >
-          {/* Define each tab screen */}
-          <Tabs.Screen name="index" options={{ title: "Home" }} />
-          <Tabs.Screen
-            name="customization"
-            options={{ title: "Customization" }}
+          <Marker
+            coordinate={{
+              latitude: location!.coords.latitude,
+              longitude: location!.coords.longitude,
+            }}
+            title={`You are here${userName ? `, ${userName}` : ""}`}
           />
-          <Tabs.Screen name="settings" options={{ title: "Settings" }} />
-          <Tabs.Screen name="profile" options={{ title: "Profile" }} />
-        </Tabs>
-      </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+        </MapView>) : (
+        <ActivityIndicator
+          size="large"
+          color="#0000ff"
+        />
+      )}
+
+      <View style={styles.topContainer}>
+        <SettingsButton />
+        <ContactsButton />
+      </View>
+
+      <View style={styles.barContainer}>
+        <BottomBar onPressLocation={function (): void {
+          throw new Error("Function not implemented.");
+        } } onPressSOS={function (): void {
+          throw new Error("Function not implemented.");
+        } } onPressAccount={function (): void {
+          throw new Error("Function not implemented.");
+        } } />
+        {/* Temporary until linked to Modals */}
+        
+      </View>
+    
+      
+      {/* Stack for screen renders on top of map */}
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: "transparent", paddingTop: 0 },
+        }}
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+
+  barContainer: {
+    position: 'absolute',
+    flexDirection: 'row',
+    width: '100%',
+    height: 120,
+    bottom: -60,
+    borderRadius: 80,
+    backgroundColor: '#fff',
+  },
+
+  topContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignContent: 'center',
+    position: 'absolute',
+    gap: '50%',
+    width: '100%',
+    height: 100,
+    top: 25,
+  }
+});
